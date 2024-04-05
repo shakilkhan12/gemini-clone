@@ -6,6 +6,7 @@ const {
   HarmCategory,
 } = require("@google/generative-ai");
 import { useState } from "react";
+import { MdModeEdit } from "react-icons/md";
 import Loader from "../app/Loader";
 import Header from "./Header";
 import { IoMdSend } from "react-icons/io";
@@ -93,11 +94,15 @@ const Main = () => {
         </div>
         </div>
         {!query && <Header prompts={prompts} />}
-        {query && <div className="flex items-center gap-4">
+        {query && <div className="flex items-center gap-4 group">
           <Image src="/kid.avif" alt="kid" width={40} height={40} className="rounded-full object-cover overflow-hidden" />
           <p className="flex-1">{storeQuery}</p>
+          <div className="w-10 h-10 items-center hidden justify-center rounded-full bg-gray-100 group-hover:flex cursor-pointer" onClick={() => setPrompt(storeQuery)}><MdModeEdit size={20} className="text-gray-600" /></div>
         </div>}
-        {loader && <div className="mt-5">
+        {loader && <div className="mt-5 flex gap-4">
+        <div className="relative w-[30px] h-[30px] ">
+        <Image src="/gemini.png" fill alt="logo" className="rounded-full mt-10 overflow-hidden object-cover animate-spin" />
+        </div>
         <Skeleton />
           </div>}
          {data &&  <div className="flex items-start gap-7 my-10">
