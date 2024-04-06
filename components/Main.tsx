@@ -12,10 +12,12 @@ import Header from "./Header";
 import { IoMdSend } from "react-icons/io";
 import Skeleton from "./Skeleton";
 import Image from "next/image";
+import Sidebar from "./Sidebar";
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_API);
-type DataType = {
+interface DataType {
   text: string;
   isCode: boolean;
+  prompt?: string
 }
 const Main = () => {
     const [prompt, setPrompt] = useState('')
@@ -23,6 +25,7 @@ const Main = () => {
     const [data, setData] = useState<DataType | null>(null)
     const [query, setQuery] = useState(false)
     const [storeQuery, setStoreQuery] = useState('')
+    const [history, setHistory] = useState<DataType[]>([])
     const [prompts] = useState([
       {id: 1, prompt: 'What is reactjs and why it is very popular?'},
       {id: 2, prompt: 'blockchain vs AI, which field is best for carerr'},
@@ -49,9 +52,14 @@ const Main = () => {
         model: "gemini-pro",
         safetySettings,
       });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const data = response.text();
+
+      const result = await model.generateContentStream(prompt);
+      let data = '';
+for await (const chunk of result.stream) {
+  const chunkText = chunk.text();
+  console.log(chunkText);
+  data += chunkText;
+}
 
 
       const isCode =data.includes("```");
@@ -60,6 +68,7 @@ const Main = () => {
         text: data,
         isCode, // Add a flag to identify code snippets
       },);
+      setHistory([{prompt, text: data, isCode},...history, ])
      } catch (error) {
       setLoader(false)
       alert('Something went wrong')
@@ -80,13 +89,15 @@ const Main = () => {
       let finalArray = newArray.split("*").join('</br>')
       return finalArray
     };
-    
+  const setCurrentResult = (data: DataType) => {
+      setData(data)
+      setStoreQuery(data.prompt)
+  }
   return (
     <>
-   
-    
-        <div className="fixed bottom-0 max-w-[940px] w-full bg-white !z-[99999999999999999999999999]">
-        <div className='bg-[#f0f4f9]  rounded-[32px]  pl-8 pr-5 h-[64px] flex items-center  w-full mb-10'>
+   <Sidebar history={history} setCurrentResult={setCurrentResult} />
+        <div className="fixed bottom-0 lef-0 right-0 w-full bg-transparent left-0 !z-[99999999999999999999999999]">
+        <div className='bg-[#f0f4f9] max-w-[940px] mx-auto  rounded-[32px]  pl-8 pr-5 h-[64px] flex items-center  w-full mb-10'>
        <input type="text" name="" className='bg-transparent outline-none h-[64px] rounded-[32px] flex-1 placeholder:text-black' placeholder='Enter a prompt here' value={prompt} onChange={(e) => setPrompt(e.target.value)} />
        
         <IoMdSend className="cursor-pointer text-gray-500" size={23} onClick={sendQuery} />
@@ -108,7 +119,7 @@ const Main = () => {
          {data &&  <div className="flex items-start gap-7 my-10">
           <Image src="/gemini.png" width={30} height={30} alt="logo" className="rounded-full mt-6 overflow-hidden object-cover" />
           <div
-              className="flex-1"
+              className="flex-1 overflow-x-auto"
             >
               {data?.isCode ? (
                 <MDEditor.Markdown
